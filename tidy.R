@@ -85,7 +85,5 @@ str(mydata_info)
 mydata %>%
   count(Sport,Medal)
 
-mydata %>%
-  group_by(Country=="USA")
-summarise(mydata)
+
 
