@@ -1,61 +1,15 @@
-
-#load tidyverse
+library(ggplot2)
 library(tidyverse)
 library(dplyr)
 
-#olympic medal winners 
-mydata <- read.csv("https://raw.githubusercontent.com/Prabhsharan139/Olympic_winners/main/summer.csv", header=TRUE)
-mydata
-
-str(mydata)
-class(mydata)
-summary(mydata)
-
-colnames(mydata)
-mydata$Year
-#Making all info uppercase
-mydata$City <- toupper(mydata$City)
-mydata$Sport <- toupper(mydata$Sport)
-mydata$Discipline <- toupper(mydata$Discipline)
-mydata$Medal <- toupper(mydata$Medal)
-View(mydata)
-
-install.packages("stringr")
-library(stringr)
-#replacing same values before combing two coumns
-mydata$Gender <- str_replace_all(mydata$Gender,c("Men"= "M","Women" = "F"))
-mydata$Discipline <- str_replace_all(mydata$Discipline,c("ATHLETICS"="","FENCING"= "","JUDO"="","HOCKEY"="","HANDBALL"=""))
-mydata$Discipline <- str_replace_all(mydata$Discipline,c( "SHOOTING"= "","TENNIS"= "","WEIGHTLIFTING" ="","ARCHERY" ="","CRICKET"= "","CROQUET"="" ))
-mydata$Discipline <- str_replace_all(mydata$Discipline,c( "FOOTBALL"= "","GOLF"= "","POLO" ="","RUGBY" ="","ROWING"= "","sAILING"="","BOXING"="","LACROSSE"="" ))
-View(mydata)
-
-install.packages("tidyr")
-library(tidyr)
-#using unite to combine two columns
-data1 <- unite(data = mydata, col =Sporting_discipline,Sport,Discipline)
-View(data1)
-     
-
-names(mydata)[1]<-"YEAR"
-
-
-Year <- filter(mydata,Year=="1999")
-Year
-City <- filter(mydata,City!="Berlin")
-City
-Athlete <- filter(mydata,Athlete=="KUMAR, Sushil")
-Athlete
-Athlete <- filter(mydata,Athlete=="KOM, Mary")
-Athlete
-Athlete <- filter(mydata,Athlete=="NEHWAL, Saina")
-View(Athlete)
-
-str(mydata)
-subset_mydata <-select(mydata,Year,City,Country,Sport)
-subset_mydata
+#olympic medal winners summer and winter dataset
+summer <- read.csv("https://raw.githubusercontent.com/Prabhsharan139/Olympic_winners/main/summer.csv", header=TRUE)
+winter <- read.csv("https://raw.githubusercontent.com/Prabhsharan139/Olympic_winners/main/winter.csv", header=TRUE)
+View(summer)
+View(winter)
 
 #add India
-subset_mydata_india <-filter(subset_mydata,Country=="IND",Year=="2008")
+subset_mydata_india <-filter(summer,Country=="IND",Year=="2008")
 subset_mydata_india
 nrow(subset_mydata_india)
 
@@ -63,27 +17,116 @@ nrow(subset_mydata_india)
 subset_mydata_india <-filter(select(mydata,Year,City,Country,Sport),Country=="IND",Year=="2008")
 summary(subset_mydata_india)
 
-#pipe operator
-subset_mydata_india <-mydata %>%
+# use of pipe operator
+#names of all winning athletes of India in 2012 summer 
+subset_mydata_india <- summer %>%
   select(Year,City,Country,Athlete,Sport,Medal) %>%
   filter(Country=="IND", Year==2012)
 subset_mydata_india
 
-str(mydata)
-china_medals <-mydata %>%
-  select(Year,Country,Sport,Medal) %>%
-  filter(Country=="CHN",Year=="2012",Medal=="Gold")
-china_medals
+mydata %>% filter(Sport == 'Wrestling')
 
-#new varaiables using mutate
-mydata_info <- mydata %>%
-  mutate (Info=Sport,Event)
+#count all medals awarded till 2012
+mydata %>% count(Medal)
 
-str(mydata_info)
+#adding new column for season in both datasets
+winter <- winter %>% mutate(Season = 'Winter')
+summer <- summer %>% mutate(Season = 'Summer')
 
-#Total no of medals won
-mydata %>%
+mydata <- winter %>% rbind(summer)
+summary(mydata)
+
+#Total no of different medals won in each category of sport
+x <- summer %>%
   count(Sport,Medal)
+
+p <- winter %>%
+  count(Sport,Medal)
+
+#summary for USA
+y <- summer %>%
+  group_by(Country=="USA")
+summarise(summer)
+
+#medals won by each country in every event in descending order
+z <- summer %>%
+  group_by(Country, Sport) %>%
+  summarise(Events = n_distinct(Event)) %>%
+  arrange(desc(Events)) 
+
+#get data of saina nehwal from summer olympics
+Athlete <- filter(summer,Athlete=="NEHWAL, Saina")
+View(Athlete)
+Athlete <- filter(mydata,Athlete=="KOM, Mary")
+Athlete
+#all info about 1996 winter season
+Year <- filter(winter,Year == "1994")
+Year
+
+con_med <- mydata %>%
+  group_by(Country,Medal) %>%
+  summarise(n_group = n())
+head(mydata)
+
+#gold medals won by china in 2012 in summer olympics in different sports
+china_medals <- summer %>%
+  select(Year,Sport,Country,Medal) %>%
+  filter(Country=="CHN",Year=="2012",Medal=="Gold")
+View(china_medals)
+
+#medals won by mwn and women in every olympioc season
+mydata %>% 
+  count(Year, Season, Gender) %>%
+  group_by(Year, Season) %>%
+  mutate(Percent = n/sum(n)*100) %>%
+  arrange(desc(Percent)) %>%
+  ggplot(mapping = aes(x = Year, y = Percent, color = Gender)) + 
+  geom_line(aes(color = Season), alpha = 0.3) + 
+  geom_point() 
+
+#number of events happening each year
+mydata %>%
+  group_by(Season, Year) %>%
+  summarise(Events = n_distinct(Event)) %>%
+  ggplot(mapping = aes(x = Year, y = Events, color = Season)) + 
+  geom_line()
+
+#different events every in summer and winter olympics
+summer %>%
+  group_by(Gender, Year, Sport) %>%
+  summarise(Events = n_distinct(Event)) %>%
+  ggplot(mapping = aes(x = Year, y = Events, color = Sport, group = Year)) +
+  geom_path(color = 'gray') + 
+  geom_point() 
+
+#no of diff events are few in winter season so we get more clear visual.
+winter %>%
+  group_by(Gender, Year, Sport) %>%
+  summarise(Events = n_distinct(Event)) %>%
+  ggplot(mapping = aes(x = Year, y = Events, color = Sport, group = Year)) +
+  geom_path(color = 'gray') + 
+  geom_point()
+
+#medals won each season
+med <- mydata %>%
+  group_by(Year,Season) %>%
+  summarise(n_group = n())
+head(mydata)
+
+med %>%
+  ggplot(aes(x=Year, y=n_group,fill=Season)) +
+  xlab("year") +
+  ylab("number of medals") +
+  geom_histogram(binwidth=0.5,stat='identity')
+
+
+a <- mydata %>%
+  count(Event, Country) %>%
+  group_by(Event) %>%
+  mutate(Totals = sum(n),
+         Percent_Medals = n/sum(n)) %>%
+  arrange(desc(Percent_Medals)) %>%
+  filter(n> 150)
 
 
 
