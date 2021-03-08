@@ -14,7 +14,7 @@ subset_mydata_india
 nrow(subset_mydata_india)
 
 #nested function
-subset_mydata_india <-filter(select(mydata,Year,City,Country,Sport),Country=="IND",Year=="2008")
+subset_mydata_india <-filter(select(summer,Year,City,Country,Sport),Country=="IND",Year=="2008")
 summary(subset_mydata_india)
 
 # use of pipe operator
@@ -24,10 +24,7 @@ subset_mydata_india <- summer %>%
   filter(Country=="IND", Year==2012)
 subset_mydata_india
 
-mydata %>% filter(Sport == 'Wrestling')
-
-#count all medals awarded till 2012
-mydata %>% count(Medal)
+wrest <- summer %>%  filter(Sport == 'Wrestling')
 
 #adding new column for season in both datasets
 winter <- winter %>% mutate(Season = 'Winter')
@@ -36,10 +33,15 @@ summer <- summer %>% mutate(Season = 'Summer')
 mydata <- winter %>% rbind(summer)
 summary(mydata)
 
+#count all medals awarded till 2012
+mydata %>% count(Medal)
+
+
 #Total no of different medals won in each category of sport
 x <- summer %>%
   count(Sport,Medal)
 
+#for winter
 p <- winter %>%
   count(Sport,Medal)
 
@@ -127,6 +129,8 @@ a <- mydata %>%
          Percent_Medals = n/sum(n)) %>%
   arrange(desc(Percent_Medals)) %>%
   filter(n> 150)
+
+
 
 
 
